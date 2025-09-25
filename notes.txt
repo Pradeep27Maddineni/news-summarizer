@@ -1,0 +1,177 @@
+News Summarizer Project – Development Journey
+
+Day 1 – Setup & Health Check:
+    Installed Python & pip (to support Django + DRF).
+    Created project folder news_summarizer.
+    Created Django backend with:
+        django-admin startproject backend
+        Created api app for REST endpoints.
+        Installed Django REST Framework (DRF).
+        Defined a health check endpoint → /api/health/.
+        Configured urls.py to include api/urls.py.
+    Created React frontend with:
+        npx create-react-app frontend
+        Installed axios in React for API calls.
+        Integrated frontend with backend using Axios (http://127.0.0.1:8000/api/health/).
+    Ran both servers:
+        React on port 3000
+        Django on port 8000
+    Verified frontend shows:
+        Backend status: ok
+
+Day 2 – Summarization Feature:
+    Started Django backend with python3 manage.py runserver.
+    Verified /api/health/ works fine.
+    Created new summarization endpoint → /api/summarize/.
+    Integrated HuggingFace DistilBART CNN model for text summarization.
+    Updated api/urls.py with new summarize/ route.
+    In React frontend:
+        Added input box for news URL.
+        Added Summarize button.
+        Used useState to store url, summary, loading.
+        Axios POST request to /api/summarize/.
+        Conditional rendering → show Loading… or Summary result.
+    Full workflow tested:
+        User enters URL → Clicks Summarize → Backend processes → Summary displayed in UI.
+
+I structured the project with separate backend/frontend folders, version-controlled with a clean .gitignore to avoid committing dependencies or secrets.
+
+1. Django:
+    Full-stack Python web framework.
+    Used for creating the backend of web applications.
+    Provides:
+        ORM (Object Relational Mapping) for database handling
+        URL routing
+        Views and templates
+        Admin interface
+
+2. Django REST Framework (djangorestframework):
+    Extension for Django to build RESTful APIs easily.
+    In my project, it allows the frontend (React) to fetch summarized news from Django backend via JSON APIs.
+
+3. django-cors-headers:
+    CORS = Cross-Origin Resource Sharing.
+    Needed when your frontend (React) and backend (Django) are running on different ports/domains.
+    Allows the frontend to call Django APIs without browser blocking the requests.
+    Example: React runs on localhost:3000 and Django on localhost:8000. Without this, requests would fail.
+
+4. Requests:
+    Python library for making HTTP requests.
+    Used to fetch external news data from APIs (like NewsAPI) or other websites.
+
+1. What is pip?
+Pip = Package Installer for Python.
+It allows you to install external libraries (like django, djangorestframework, requests).
+Example: pip install django installs Django framework.
+👉 Interview angle:
+Q: Why do we use pip instead of manual installation?
+A: Pip handles dependencies automatically, ensures version management, and allows us to replicate environments (with requirements.txt).
+
+2. Virtual Environment
+A virtual environment isolates Python packages for a project.
+Without it → installing Django globally may conflict with other projects.
+👉 Interview angle:
+Q: Why is virtual environment important?
+A: It prevents dependency conflicts between projects and ensures reproducible setups for deployment.
+
+3. Django + DRF Setup
+Django = full-stack web framework (ORM, authentication, templates).
+DRF = extension for building REST APIs easily.
+👉 Interview angle:
+Q: Why not use plain Django instead of DRF?
+A: DRF provides serialization, API views, authentication classes, pagination, etc., making it much easier to build modern APIs (especially when React frontend is consuming JSON).
+
+4. Axios in React
+Axios is a promise-based HTTP client for Node.js and browsers.
+It is used to make HTTP requests (GET, POST, PUT, DELETE, etc.) from frontend apps (like React) or backend (Node.js server).
+Works with JSON by default, making it easy to send/receive data from APIs.
+Used here to call Django backend (/api/health/).
+Example in App.js:
+useEffect(() => {
+  axios.get("http://127.0.0.1:8000/api/health/")
+    .then(res => setStatus(res.data.status))
+    .catch(err => setStatus("error"));
+}, []);
+👉 Interview angle:
+Q: Why use Axios instead of Fetch API?
+A: Axios has built-in features like request/response interceptors, automatic JSON parsing, easier error handling, and works well with older browsers.
+
+5. Frontend-Backend Connection
+Frontend (React) is decoupled from backend (Django).
+They talk via REST APIs (HTTP requests).
+Good architecture for scalability → backend can later be reused for mobile apps.
+👉 Interview angle:
+Q: Why separate frontend and backend instead of using Django templates?
+A: Separation improves scalability, allows independent development, and makes frontend more dynamic with React.
+
+Q: What is Django and why did you choose it for the backend?
+A: Django is a high-level Python web framework that provides ORM, authentication, and scalability. I chose it because it works seamlessly with REST APIs when combined with DRF, making it ideal for a news summarizer backend.
+
+Q: How do you connect frontend (React) with backend (Django)?
+A: Through REST APIs. React sends HTTP requests (GET, POST) to Django endpoints, Django processes and returns JSON responses, and React renders them.
+
+Q: What happens when you run python manage.py runserver?
+A: It starts Django’s development server, loads settings, applies middleware, sets up database connections, and makes endpoints available at localhost:8000.
+
+Routes:
+/api/health/ (GET) → health check (used for frontend-backend connectivity testing).
+/api/summarize/ (POST) → takes a news article URL, summarizes it with HuggingFace’s DistilBART model, and returns JSON.
+
+url: Tracks user input.
+summary: Stores backend response after summarization.
+loading: Used to show spinner or “Loading…” while waiting.
+
+Q: Why do we need useState in React?
+A: In React, state allows components to re-render when data changes. Without state, UI would be static.
+
+Q: Difference between props and state?
+A:
+Props → read-only, passed from parent to child.
+State → local to a component, managed internally, mutable.
+
+onChange: Captures user typing and updates url using setUrl.
+onClick: Calls function to fetch summary.
+Q: What is two-way data binding?
+A: When UI updates state (onChange) and state updates UI (value), creating a sync between them. React achieves this via controlled components.
+
+Axios makes HTTP requests from frontend to backend.
+It handles JSON parsing automatically.
+POST body ({url: ...}) is sent to Django.
+Backend responds with summary.
+
+Q: Difference between fetch() and axios?
+A:
+Fetch needs .then(res => res.json()), Axios parses automatically.
+Axios supports interceptors and timeout handling.
+Axios has simpler syntax for POST requests.
+
+Q: Why POST and not GET for summarization?
+A: POST is used when we send data to the server (news URL here). GET is used only for retrieving data without changing state.
+
+If loading = true → show Loading message.
+Else if summary exists → show summary text.
+Prevents UI from looking blank while waiting.
+
+Q: What is conditional rendering?
+A: Rendering components dynamically based on conditions. In React, this is done using ternary operators, logical AND (&&), or if statements.
+Q: Why is this important?
+A: Enhances UX → users see immediate feedback (spinner, loader, etc.) while the app processes data.
+
+Explain how the frontend communicates with the backend in your project.
+React (Axios) sends HTTP requests → Django receives → processes with ML model → responds JSON → React updates UI.
+
+Why do we need a loading state in frontend apps?
+To improve UX and avoid confusion. Without it, users might think the app is broken.
+
+What are the HTTP methods you used and why?
+GET (for health check).
+POST (for summarization, since we’re sending input data to backend).
+
+What is the role of Axios in your app?
+Axios acts as the bridge between React frontend and Django backend. It makes async HTTP requests and simplifies JSON handling.
+
+What happens step by step when you click the "Summarize" button?
+React sets loading = true.
+Axios sends POST request with URL.
+Django summarizes article and returns JSON.
+React updates summary, sets loading = false, re-renders UI.
