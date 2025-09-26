@@ -1,38 +1,26 @@
-from django.shortcuts import render
-from rest_framework.decorators import api_view
-from rest_framework.response import Response ##1
-
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.http import JsonResponse
+from transformers import pipeline
 import requests
-from transformers import pipeline ##2
 
+# Health check endpoint
 @api_view(['GET'])
 def health(request):
-    return Response({"status": "ok"}) ##1
+    return Response({"status": "ok"})
 
-# Load summarization pipeline (small model for demo)
-summarizer = pipeline("summarization")
+# Load summarization pipeline
+summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 
-NEWS_API_KEY = "YOUR_NEWSAPI_KEY"
+NEWS_API_KEY = "650a70dc96df44e8adb568bde0d5f26e"  # (for later use)
 
-@api_view(['GET'])
-def summarize_news(request):
-    topic = request.GET.get("topic", "technology")  # default topic
-    url = f"https://newsapi.org/v2/everything?q={topic}&pageSize=5&apiKey={"650a70dc96df44e8adb568bde0d5f26e"}"
-    res = requests.get(url)
-    news = res.json()
+# Summarization endpoint
+@api_view(["POST"])
+def summarize_text(request):
+    text = request.data.get("text", "")
 
-    summaries = []
-    for article in news.get("articles", []):
-        text = article.get("content") or article.get("description") or ""
-        if text:
-            summary = summarizer(text, max_length=60, min_length=20, do_sample=False)[0]['summary_text']
-            summaries.append({
-                "title": article.get("title"),
-                "summary": summary,
-                "url": article.get("url")
-            })
+    if not text.strip():
+        return JsonResponse({"error": "No text provided"}, status=400)
 
-    return Response({"topic": topic, "summaries": summaries}) ##2
-
+    summary = summarizer(text, max_length=150, min_length=40, do_sample=False)
+    return JsonResponse({"summary": summary[0]["summary_text"]})

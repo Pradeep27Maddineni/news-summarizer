@@ -1,83 +1,68 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 
 function App() {
-  // Backend status
-  const [status, setStatus] = useState("loading");
+  // State for user input, summary result, and loading status
+  const [text, setText] = useState("");
+  const [summary, setSummary] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // News summarization
-  const [topic, setTopic] = useState("technology");
-  const [summaries, setSummaries] = useState([]);
-  const [loadingSummaries, setLoadingSummaries] = useState(false);
+  // Function to call backend summarize API
+  const handleSummarize = async () => {
+    if (!text.trim()) {
+      setSummary("⚠️ Please enter some text first.");
+      return;
+    }
 
-  // Check backend health on mount
-  useEffect(() => {
-    axios.get("http://127.0.0.1:8000/api/health/")
-      .then(res => setStatus(res.data.status))
-      .catch(err => setStatus("error"));
-  }, []);
+    setLoading(true);
+    setSummary(""); // Clear old summary
 
-  // Fetch summaries from backend
-  const fetchSummaries = () => {
-    if (!topic) return;
-    setLoadingSummaries(true);
-    axios.get(`http://127.0.0.1:8000/api/summarize/?topic=${topic}`)
-      .then(res => setSummaries(res.data.summaries))
-      .catch(err => {
-        console.error(err);
-        setSummaries([]);
-      })
-      .finally(() => setLoadingSummaries(false));
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/api/summarize/", { text });
+      setSummary(response.data.summary);
+    } catch (error) {
+      console.error("Error summarizing:", error);
+      setSummary("⚠️ Error connecting to backend.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
-      <h1>📰 News Summarizer</h1>
+    <div style={{ margin: "40px", fontFamily: "Arial, sans-serif" }}>
+      <h2>📰 News Summarizer</h2>
 
-      {/* Backend health status */}
-      <p><strong>Backend status:</strong> {status}</p>
+      {/* Textarea for input */}
+      <textarea
+        rows="8"
+        cols="60"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Paste your article or news here..."
+        style={{ padding: "10px", fontSize: "14px" }}
+      />
 
-      {/* Topic input */}
-      <div style={{ marginTop: 20 }}>
-        <input
-          type="text"
-          value={topic}
-          onChange={e => setTopic(e.target.value)}
-          placeholder="Enter topic (e.g., technology, bitcoin)"
-          style={{ padding: 8, width: "70%", marginRight: 10 }}
-        />
-        <button onClick={fetchSummaries} style={{ padding: "8px 16px" }}>
-          Summarize
-        </button>
-      </div>
+      <br />
 
-      {/* Loading indicator */}
-      {loadingSummaries && <p>Fetching and summarizing news...</p>}
+      {/* Summarize button */}
+      <button
+        onClick={handleSummarize}
+        style={{
+          marginTop: "10px",
+          padding: "10px 20px",
+          fontSize: "16px",
+          cursor: "pointer",
+        }}
+        disabled={loading}
+      >
+        {loading ? "Summarizing..." : "Summarize"}
+      </button>
 
-      {/* Display summarized news */}
-      <div style={{ marginTop: 20 }}>
-        {summaries.length === 0 && !loadingSummaries && (
-          <p>No summaries to display. Enter a topic and click Summarize.</p>
-        )}
-        {summaries.map((s, idx) => (
-          <div
-            key={idx}
-            style={{
-              marginTop: 15,
-              padding: 15,
-              border: "1px solid #ccc",
-              borderRadius: 5,
-              backgroundColor: "#f9f9f9"
-            }}
-          >
-            <h3>{s.title}</h3>
-            <p>{s.summary}</p>
-            <a href={s.url} target="_blank" rel="noopener noreferrer">
-              Read full article
-            </a>
-          </div>
-        ))}
-      </div>
+      {/* Summary output */}
+      <h3>Summary:</h3>
+      <p style={{ background: "#f5f5f5", padding: "10px", borderRadius: "5px" }}>
+        {summary}
+      </p>
     </div>
   );
 }
