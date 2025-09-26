@@ -175,3 +175,20 @@ React sets loading = true.
 Axios sends POST request with URL.
 Django summarizes article and returns JSON.
 React updates summary, sets loading = false, re-renders UI.
+Q: What happens when the user clicks “Summarize”?
+A: React sets loading = true, sends a POST request with {text} to /api/summarize/ via Axios; Django/DRF receives it (request.data), passes the text to the HuggingFace pipeline which returns a summary; backend returns JSON { summary }; React updates UI and sets loading = false.
+
+Q: Why did the first summarization call take very long?
+A: The pipeline loads a pre-trained model which must be downloaded (first time) to local cache (~hundreds of MB/GB). Subsequent calls use the cached model.
+
+Q: How would you handle very long articles?
+A: Split into chunks (with overlap), summarize each chunk, then optionally summarize the concatenated chunk summaries (two-step). Or use a long-context model / specialized summarization approach.
+
+Q: JsonResponse vs DRF Response — which to use?
+A: Use DRF's Response when you leverage DRF features like serializers, authentication classes, content negotiation. JsonResponse is fine for simple JSON responses.
+
+Q: How to prevent CORS problems in production?
+A: Configure CORS_ALLOWED_ORIGINS to a whitelist of allowed domains; don't use CORS_ALLOW_ALL_ORIGINS = True in production.
+
+Q: How to make the summarization asynchronous?
+A: Offload inference to a background worker (Celery + Redis). Frontend initiates a job and polls the job status or uses websockets.
